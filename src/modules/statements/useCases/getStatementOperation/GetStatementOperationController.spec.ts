@@ -6,12 +6,13 @@ const request = require("supertest");
 import { app } from "../../../../app";
 
 let connection: Connection;
-describe("Authenticated user Controller", () => {
+describe("Create statement operation Controller", () => {
+  const userPassword = "123456";
   const user = {
     id: uuidV4(),
-    name: "user test Authenticate",
-    email: "testauthenticate@gmail.com",
-    password: hash("123456", 8),
+    name: "user test statementOperation",
+    email: "teststatementoperation@gmail.com",
+    password: hash(userPassword, 8),
   };
 
   beforeAll(async () => {
@@ -29,12 +30,27 @@ describe("Authenticated user Controller", () => {
     await connection.close();
   });
 
-  it("should be able to create a new user", async () => {
+  it("should be able to get statement with id", async () => {
     const responseToken = await request(app).post("/api/v1/sessions").send({
       email: user.email,
-      password: "123456",
+      password: userPassword,
     });
 
-    expect(responseToken.body).toHaveProperty("token");
+    const { token } = responseToken.body;
+
+    const deposit = await request(app)
+      .post("/api/v1/statements/deposit")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        amount: 100,
+        description: "deposit test",
+      });
+
+    const { id } = deposit.body;
+
+    const statement = await request(app)
+      .get(`/api/v1/statements/${id}`)
+      .set("Authorization", `Bearer ${token}`);
+    expect(statement.body).toHaveProperty("id");
   });
 });

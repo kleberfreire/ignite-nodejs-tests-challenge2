@@ -6,12 +6,13 @@ const request = require("supertest");
 import { app } from "../../../../app";
 
 let connection: Connection;
-describe("Authenticated user Controller", () => {
+describe("Show profile Controller", () => {
+  const userPassword = "123456";
   const user = {
     id: uuidV4(),
-    name: "user test Authenticate",
-    email: "testauthenticate@gmail.com",
-    password: hash("123456", 8),
+    name: "user test Profile",
+    email: "testProfile@gmail.com",
+    password: hash(userPassword, 8),
   };
 
   beforeAll(async () => {
@@ -29,12 +30,18 @@ describe("Authenticated user Controller", () => {
     await connection.close();
   });
 
-  it("should be able to create a new user", async () => {
+  it("should be able to show profile user", async () => {
     const responseToken = await request(app).post("/api/v1/sessions").send({
       email: user.email,
-      password: "123456",
+      password: userPassword,
     });
 
-    expect(responseToken.body).toHaveProperty("token");
+    const { token } = responseToken.body;
+
+    const showProfileUser = await request(app)
+      .get("/api/v1/profile")
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(showProfileUser.body).toHaveProperty("id");
   });
 });
